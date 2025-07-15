@@ -1,0 +1,755 @@
+<s>[INST] How do I calculate the correlation between two variables in a pandas DataFrame? [/INST]
+You can calculate correlation using the .corr() method:
+
+```python
+import pandas as pd
+import numpy as np
+
+# Sample data
+df = pd.DataFrame({
+    'variable1': [1, 2, 3, 4, 5],
+    'variable2': [2, 4, 6, 8, 10]
+})
+
+# Calculate correlation between two specific columns
+correlation = df['variable1'].corr(df['variable2'])
+print(f"Correlation: {correlation}")
+
+# Calculate correlation matrix for all numeric columns
+corr_matrix = df.corr()
+print(corr_matrix)
+```
+This is the description of what the code block changes:
+<changeDescription>
+Adding comprehensive data science training examples including problem-solution formats, code explanations, EDA workflows, and error debugging
+</changeDescription>
+
+This is the code block that represents the suggested code change:
+````plaintext
+The correlation coefficient ranges from -1 to 1, where 1 indicates perfect positive correlation, -1 indicates perfect negative correlation, and 0 indicates no linear correlation.</s>
+
+<s>[INST] I have a dataset with missing values. How do I handle them effectively for machine learning? [/INST]
+Here's a comprehensive approach to handling missing values:
+
+```python
+import pandas as pd
+import numpy as np
+from sklearn.impute import SimpleImputer, KNNImputer
+
+# Load data and check missing values
+df = pd.read_csv('your_data.csv')
+print("Missing values per column:")
+print(df.isnull().sum())
+
+# Strategy 1: Remove rows with missing values (if <5% of data)
+if df.isnull().sum().sum() / len(df) < 0.05:
+    df_clean = df.dropna()
+
+# Strategy 2: Fill with statistical measures
+# For numerical columns
+numerical_cols = df.select_dtypes(include=[np.number]).columns
+df[numerical_cols] = df[numerical_cols].fillna(df[numerical_cols].median())
+
+# For categorical columns
+categorical_cols = df.select_dtypes(include=['object']).columns
+df[categorical_cols] = df[categorical_cols].fillna(df[categorical_cols].mode().iloc[0])
+
+# Strategy 3: Advanced imputation with KNN
+imputer = KNNImputer(n_neighbors=5)
+df_imputed = pd.DataFrame(imputer.fit_transform(df), columns=df.columns)
+```
+
+Choose the strategy based on the percentage and pattern of missing data in your dataset.</s>
+
+<s>[INST] Explain this data preprocessing code and suggest improvements:
+
+```python
+df = pd.read_csv('data.csv')
+df = df.dropna()
+X = df.drop('target', axis=1)
+y = df['target']
+```
+[/INST]
+
+This code performs basic data preprocessing, but it can be significantly improved:
+
+**Current Code Analysis:**
+- Loads a CSV file into a pandas DataFrame
+- Removes all rows with any missing values (aggressive approach)
+- Separates features (X) and target variable (y)
+
+**Improved Version:**
+```python
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.impute import SimpleImputer
+
+# Load data with better error handling
+try:
+    df = pd.read_csv('data.csv')
+    print(f"Data shape: {df.shape}")
+    print(f"Missing values: {df.isnull().sum().sum()}")
+except FileNotFoundError:
+    print("File not found. Check the file path.")
+
+# Analyze missing data before dropping
+missing_percentage = (df.isnull().sum() / len(df)) * 100
+print("Missing data percentage per column:")
+print(missing_percentage[missing_percentage > 0])
+
+# Handle missing values more strategically
+# Only drop rows if target is missing
+df = df.dropna(subset=['target'])
+
+# Impute missing values in features
+imputer = SimpleImputer(strategy='median')
+numerical_features = df.select_dtypes(include=['float64', 'int64']).columns
+df[numerical_features] = imputer.fit_transform(df[numerical_features])
+
+# Separate features and target
+X = df.drop('target', axis=1)
+y = df['target']
+
+# Split data before any scaling
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Scale features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+```
+
+**Key Improvements:**
+1. Added error handling for file loading
+2. Analyzed missing data before removal
+3. Used strategic imputation instead of dropping all missing data
+4. Added proper train-test split
+5. Included feature scaling
+6. Added informative print statements for debugging</s>
+
+<s>[INST] Walk me through a complete exploratory data analysis workflow [/INST]
+Here's a comprehensive EDA workflow:
+
+**Step 1: Data Loading and Initial Inspection**
+```python
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load data
+df = pd.read_csv('dataset.csv')
+
+# Basic info
+print("Dataset shape:", df.shape)
+print("\nData types:")
+print(df.dtypes)
+print("\nFirst few rows:")
+print(df.head())
+```
+
+**Step 2: Data Quality Assessment**
+```python
+# Missing values
+print("Missing values:")
+print(df.isnull().sum())
+
+# Duplicates
+print(f"\nDuplicate rows: {df.duplicated().sum()}")
+
+# Basic statistics
+print("\nDescriptive statistics:")
+print(df.describe())
+```
+
+**Step 3: Univariate Analysis**
+```python
+# Distribution of numerical variables
+numerical_cols = df.select_dtypes(include=[np.number]).columns
+fig, axes = plt.subplots(len(numerical_cols), 2, figsize=(12, 4*len(numerical_cols)))
+
+for i, col in enumerate(numerical_cols):
+    # Histogram
+    axes[i,0].hist(df[col].dropna(), bins=30)
+    axes[i,0].set_title(f'{col} - Histogram')
+    
+    # Box plot
+    axes[i,1].boxplot(df[col].dropna())
+    axes[i,1].set_title(f'{col} - Box Plot')
+
+plt.tight_layout()
+plt.show()
+```
+
+**Step 4: Bivariate Analysis**
+```python
+# Correlation matrix
+plt.figure(figsize=(10, 8))
+correlation_matrix = df.corr()
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
+plt.title('Correlation Matrix')
+plt.show()
+
+# Scatter plots for highly correlated variables
+high_corr_pairs = []
+for i in range(len(correlation_matrix.columns)):
+    for j in range(i+1, len(correlation_matrix.columns)):
+        if abs(correlation_matrix.iloc[i, j]) > 0.7:
+            high_corr_pairs.append((correlation_matrix.columns[i], correlation_matrix.columns[j]))
+
+for pair in high_corr_pairs:
+    plt.figure(figsize=(8, 6))
+    plt.scatter(df[pair[0]], df[pair[1]])
+    plt.xlabel(pair[0])
+    plt.ylabel(pair[1])
+    plt.title(f'{pair[0]} vs {pair[1]}')
+    plt.show()
+```
+
+This workflow helps identify patterns, outliers, and relationships in your data before modeling.</s>
+
+<s>[INST] I'm getting this error: "ValueError: could not convert string to float: 'N/A'". How do I fix it? [/INST]
+This error occurs when trying to convert non-numeric strings to float. Here's how to handle it:
+
+**Problem:** Your dataset contains 'N/A' strings that pandas doesn't recognize as missing values.
+
+**Solution:**
+```python
+import pandas as pd
+import numpy as np
+
+# Method 1: Specify na_values when reading CSV
+df = pd.read_csv('your_file.csv', na_values=['N/A', 'n/a', 'NA', 'null', ''])
+
+# Method 2: Replace after loading
+df = pd.read_csv('your_file.csv')
+df = df.replace(['N/A', 'n/a', 'NA', 'null'], np.nan)
+
+# Method 3: Use pd.to_numeric with errors='coerce'
+df['column_name'] = pd.to_numeric(df['column_name'], errors='coerce')
+
+# Method 4: Clean the entire dataframe
+def clean_dataframe(df):
+    # Replace common missing value representations
+    df = df.replace(['N/A', 'n/a', 'NA', 'null', '', ' '], np.nan)
+    
+    # Convert numeric columns
+    for col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors='ignore')
+    
+    return df
+
+df_clean = clean_dataframe(df)
+```
+
+**Prevention:** Always explore your data first:
+```python
+# Check unique values in problematic columns
+print(df['column_name'].unique())
+print(df['column_name'].value_counts(dropna=False))
+```</s>
+
+<s>[INST] How do I perform feature engineering for machine learning? [/INST]
+Feature engineering is crucial for improving model performance. Here's a comprehensive approach:
+
+**1. Creating New Features from Existing Ones**
+```python
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import PolynomialFeatures
+
+# Sample data
+df = pd.DataFrame({
+    'age': [25, 30, 35, 40, 45],
+    'income': [50000, 60000, 70000, 80000, 90000],
+    'date': pd.to_datetime(['2020-01-15', '2020-06-20', '2021-03-10', '2021-09-05', '2022-02-28'])
+})
+
+# Mathematical transformations
+df['income_log'] = np.log(df['income'])
+df['age_squared'] = df['age'] ** 2
+df['income_per_age'] = df['income'] / df['age']
+
+# Date features
+df['year'] = df['date'].dt.year
+df['month'] = df['date'].dt.month
+df['day_of_week'] = df['date'].dt.dayofweek
+df['is_weekend'] = df['day_of_week'].isin([5, 6]).astype(int)
+
+# Polynomial features
+poly = PolynomialFeatures(degree=2, include_bias=False)
+numerical_cols = ['age', 'income']
+poly_features = poly.fit_transform(df[numerical_cols])
+poly_feature_names = poly.get_feature_names_out(numerical_cols)
+poly_df = pd.DataFrame(poly_features, columns=poly_feature_names)
+```
+
+**2. Encoding Categorical Variables**
+```python
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+import pandas as pd
+
+# Sample categorical data
+df = pd.DataFrame({
+    'color': ['red', 'blue', 'green', 'red', 'blue'],
+    'size': ['small', 'medium', 'large', 'medium', 'small'],
+    'price': [10, 20, 30, 15, 12]
+})
+
+# Label Encoding (for ordinal data)
+size_mapping = {'small': 0, 'medium': 1, 'large': 2}
+df['size_encoded'] = df['size'].map(size_mapping)
+
+# One-Hot Encoding (for nominal data)
+df_encoded = pd.get_dummies(df, columns=['color'], prefix='color')
+
+# Target Encoding (for high cardinality categorical features)
+def target_encode(df, categorical_col, target_col):
+    target_mean = df.groupby(categorical_col)[target_col].mean()
+    df[f'{categorical_col}_target_encoded'] = df[categorical_col].map(target_mean)
+    return df
+
+df = target_encode(df, 'color', 'price')
+```
+
+**3. Handling Outliers**
+```python
+from scipy import stats
+import numpy as np
+
+def handle_outliers(df, column, method='iqr'):
+    if method == 'iqr':
+        Q1 = df[column].quantile(0.25)
+        Q3 = df[column].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+        
+        # Cap outliers
+        df[f'{column}_capped'] = df[column].clip(lower_bound, upper_bound)
+        
+    elif method == 'zscore':
+        z_scores = np.abs(stats.zscore(df[column]))
+        df[f'{column}_no_outliers'] = df[column].where(z_scores < 3, df[column].median())
+    
+    return df
+
+# Apply outlier handling
+df = handle_outliers(df, 'income', method='iqr')
+```
+
+**4. Feature Scaling**
+```python
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
+
+# Different scaling methods
+scaler_standard = StandardScaler()
+scaler_minmax = MinMaxScaler()
+scaler_robust = RobustScaler()
+
+# Apply scaling
+df['income_standard'] = scaler_standard.fit_transform(df[['income']])
+df['income_minmax'] = scaler_minmax.fit_transform(df[['income']])
+df['income_robust'] = scaler_robust.fit_transform(df[['income']])
+```
+
+**5. Feature Selection**
+```python
+from sklearn.feature_selection import SelectKBest, f_regression, RFE
+from sklearn.ensemble import RandomForestRegressor
+
+# Statistical feature selection
+selector = SelectKBest(score_func=f_regression, k=5)
+X_selected = selector.fit_transform(X, y)
+selected_features = X.columns[selector.get_support()]
+
+# Recursive Feature Elimination
+estimator = RandomForestRegressor(n_estimators=100, random_state=42)
+rfe = RFE(estimator, n_features_to_select=5)
+X_rfe = rfe.fit_transform(X, y)
+rfe_features = X.columns[rfe.support_]
+
+print("Selected features:", selected_features.tolist())
+print("RFE features:", rfe_features.tolist())
+```
+
+This comprehensive approach covers the main aspects of feature engineering for better model performance.</s>
+
+<s>[INST] How do I evaluate a machine learning model properly? [/INST]
+Model evaluation is critical for understanding performance. Here's a comprehensive evaluation framework:
+
+**1. Classification Model Evaluation**
+```python
+from sklearn.metrics import (
+    accuracy_score, precision_score, recall_score, f1_score,
+    confusion_matrix, classification_report, roc_auc_score, roc_curve
+)
+from sklearn.model_selection import cross_val_score, StratifiedKFold
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Basic metrics
+def evaluate_classification(y_true, y_pred, y_prob=None):
+    print("Classification Metrics:")
+    print(f"Accuracy: {accuracy_score(y_true, y_pred):.4f}")
+    print(f"Precision: {precision_score(y_true, y_pred, average='weighted'):.4f}")
+    print(f"Recall: {recall_score(y_true, y_pred, average='weighted'):.4f}")
+    print(f"F1-Score: {f1_score(y_true, y_pred, average='weighted'):.4f}")
+    
+    if y_prob is not None:
+        print(f"ROC-AUC: {roc_auc_score(y_true, y_prob):.4f}")
+    
+    # Confusion Matrix
+    cm = confusion_matrix(y_true, y_pred)
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+    plt.title('Confusion Matrix')
+    plt.ylabel('Actual')
+    plt.xlabel('Predicted')
+    plt.show()
+    
+    # Classification Report
+    print("\nDetailed Classification Report:")
+    print(classification_report(y_true, y_pred))
+
+# ROC Curve
+def plot_roc_curve(y_true, y_prob):
+    fpr, tpr, thresholds = roc_curve(y_true, y_prob)
+    auc = roc_auc_score(y_true, y_prob)
+    
+    plt.figure(figsize=(8, 6))
+    plt.plot(fpr, tpr, label=f'ROC Curve (AUC = {auc:.4f})')
+    plt.plot([0, 1], [0, 1], 'k--', label='Random')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC Curve')
+    plt.legend()
+    plt.show()
+```
+
+**2. Regression Model Evaluation**
+```python
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import numpy as np
+
+def evaluate_regression(y_true, y_pred):
+    mse = mean_squared_error(y_true, y_pred)
+    rmse = np.sqrt(mse)
+    mae = mean_absolute_error(y_true, y_pred)
+    r2 = r2_score(y_true, y_pred)
+    
+    print("Regression Metrics:")
+    print(f"MSE: {mse:.4f}")
+    print(f"RMSE: {rmse:.4f}")
+    print(f"MAE: {mae:.4f}")
+    print(f"R²: {r2:.4f}")
+    
+    # Residual plots
+    residuals = y_true - y_pred
+    
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    
+    # Residuals vs Predicted
+    axes[0].scatter(y_pred, residuals)
+    axes[0].axhline(y=0, color='r', linestyle='--')
+    axes[0].set_xlabel('Predicted Values')
+    axes[0].set_ylabel('Residuals')
+    axes[0].set_title('Residuals vs Predicted')
+    
+    # QQ plot for residuals
+    from scipy import stats
+    stats.probplot(residuals, dist="norm", plot=axes[1])
+    axes[1].set_title('Q-Q Plot of Residuals')
+    
+    plt.tight_layout()
+    plt.show()
+```
+
+**3. Cross-Validation**
+```python
+from sklearn.model_selection import cross_val_score, KFold, StratifiedKFold
+
+def cross_validate_model(model, X, y, cv=5, scoring='accuracy'):
+    if scoring in ['accuracy', 'f1', 'precision', 'recall']:
+        cv_strategy = StratifiedKFold(n_splits=cv, shuffle=True, random_state=42)
+    else:
+        cv_strategy = KFold(n_splits=cv, shuffle=True, random_state=42)
+    
+    scores = cross_val_score(model, X, y, cv=cv_strategy, scoring=scoring)
+    
+    print(f"Cross-Validation Results ({scoring}):")
+    print(f"Mean: {scores.mean():.4f}")
+    print(f"Std: {scores.std():.4f}")
+    print(f"Individual scores: {scores}")
+    
+    return scores
+```
+
+**4. Learning Curves**
+```python
+from sklearn.model_selection import learning_curve
+
+def plot_learning_curve(model, X, y, cv=5):
+    train_sizes, train_scores, val_scores = learning_curve(
+        model, X, y, cv=cv, train_sizes=np.linspace(0.1, 1.0, 10)
+    )
+    
+    train_mean = np.mean(train_scores, axis=1)
+    train_std = np.std(train_scores, axis=1)
+    val_mean = np.mean(val_scores, axis=1)
+    val_std = np.std(val_scores, axis=1)
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(train_sizes, train_mean, 'o-', label='Training Score')
+    plt.fill_between(train_sizes, train_mean - train_std, train_mean + train_std, alpha=0.1)
+    
+    plt.plot(train_sizes, val_mean, 'o-', label='Validation Score')
+    plt.fill_between(train_sizes, val_mean - val_std, val_mean + val_std, alpha=0.1)
+    
+    plt.xlabel('Training Set Size')
+    plt.ylabel('Score')
+    plt.title('Learning Curve')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+```
+
+**5. Hyperparameter Validation**
+```python
+from sklearn.model_selection import validation_curve
+
+def plot_validation_curve(model, X, y, param_name, param_range, cv=5):
+    train_scores, val_scores = validation_curve(
+        model, X, y, param_name=param_name, param_range=param_range, cv=cv
+    )
+    
+    train_mean = np.mean(train_scores, axis=1)
+    train_std = np.std(train_scores, axis=1)
+    val_mean = np.mean(val_scores, axis=1)
+    val_std = np.std(val_scores, axis=1)
+    
+    plt.figure(figsize=(10, 6))
+    plt.semilogx(param_range, train_mean, 'o-', label='Training Score')
+    plt.fill_between(param_range, train_mean - train_std, train_mean + train_std, alpha=0.1)
+    
+    plt.semilogx(param_range, val_mean, 'o-', label='Validation Score')
+    plt.fill_between(param_range, val_mean - val_std, val_mean + val_std, alpha=0.1)
+    
+    plt.xlabel(param_name)
+    plt.ylabel('Score')
+    plt.title(f'Validation Curve - {param_name}')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+```
+
+Use these evaluation techniques to get a comprehensive understanding of your model's performance and identify areas for improvement.</s>
+
+<s>[INST] How do I handle time series data for machine learning? [/INST]
+Time series data requires special handling due to its temporal nature. Here's a comprehensive approach:
+
+**1. Time Series Data Preparation**
+```python
+import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
+import matplotlib.pyplot as plt
+
+# Load and prepare time series data
+def prepare_time_series(df, date_col, value_col):
+    # Convert to datetime
+    df[date_col] = pd.to_datetime(df[date_col])
+    
+    # Set datetime as index
+    df = df.set_index(date_col)
+    
+    # Sort by date
+    df = df.sort_index()
+    
+    # Check for missing dates and fill
+    full_range = pd.date_range(start=df.index.min(), end=df.index.max(), freq='D')
+    df = df.reindex(full_range)
+    
+    # Handle missing values
+    df[value_col] = df[value_col].interpolate(method='time')
+    
+    return df
+
+# Example usage
+data = pd.DataFrame({
+    'date': pd.date_range('2020-01-01', periods=100, freq='D'),
+    'sales': np.random.randint(50, 200, 100) + np.sin(np.arange(100) * 0.1) * 20
+})
+
+ts_data = prepare_time_series(data, 'date', 'sales')
+```
+
+**2. Feature Engineering for Time Series**
+```python
+def create_time_features(df, date_col):
+    # Extract time-based features
+    df['year'] = df.index.year
+    df['month'] = df.index.month
+    df['day'] = df.index.day
+    df['dayofweek'] = df.index.dayofweek
+    df['dayofyear'] = df.index.dayofyear
+    df['quarter'] = df.index.quarter
+    df['is_weekend'] = (df.index.dayofweek >= 5).astype(int)
+    df['is_month_start'] = df.index.is_month_start.astype(int)
+    df['is_month_end'] = df.index.is_month_end.astype(int)
+    
+    return df
+
+def create_lag_features(df, value_col, lags=[1, 7, 30]):
+    # Create lagged features
+    for lag in lags:
+        df[f'{value_col}_lag_{lag}'] = df[value_col].shift(lag)
+    
+    # Rolling statistics
+    for window in [7, 30]:
+        df[f'{value_col}_rolling_mean_{window}'] = df[value_col].rolling(window=window).mean()
+        df[f'{value_col}_rolling_std_{window}'] = df[value_col].rolling(window=window).std()
+        df[f'{value_col}_rolling_min_{window}'] = df[value_col].rolling(window=window).min()
+        df[f'{value_col}_rolling_max_{window}'] = df[value_col].rolling(window=window).max()
+    
+    # Exponentially weighted moving average
+    df[f'{value_col}_ewm'] = df[value_col].ewm(span=7).mean()
+    
+    return df
+
+# Apply feature engineering
+ts_data = create_time_features(ts_data, 'date')
+ts_data = create_lag_features(ts_data, 'sales')
+```
+
+**3. Time Series Cross-Validation**
+```python
+from sklearn.model_selection import TimeSeriesSplit
+from sklearn.metrics import mean_squared_error
+
+def time_series_cv(model, X, y, n_splits=5):
+    tscv = TimeSeriesSplit(n_splits=n_splits)
+    cv_scores = []
+    
+    for fold, (train_idx, test_idx) in enumerate(tscv.split(X)):
+        X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
+        y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
+        
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        
+        mse = mean_squared_error(y_test, y_pred)
+        cv_scores.append(mse)
+        
+        print(f"Fold {fold + 1}: MSE = {mse:.4f}")
+    
+    print(f"Average MSE: {np.mean(cv_scores):.4f}")
+    print(f"Std MSE: {np.std(cv_scores):.4f}")
+    
+    return cv_scores
+```
+
+**4. Seasonal Decomposition**
+```python
+from statsmodels.tsa.seasonal import seasonal_decompose
+
+def decompose_time_series(ts, period=365):
+    decomposition = seasonal_decompose(ts, model='additive', period=period)
+    
+    fig, axes = plt.subplots(4, 1, figsize=(12, 10))
+    
+    decomposition.observed.plot(ax=axes[0], title='Original')
+    decomposition.trend.plot(ax=axes[1], title='Trend')
+    decomposition.seasonal.plot(ax=axes[2], title='Seasonal')
+    decomposition.resid.plot(ax=axes[3], title='Residual')
+    
+    plt.tight_layout()
+    plt.show()
+    
+    return decomposition
+
+# Apply decomposition
+decomp = decompose_time_series(ts_data['sales'])
+```
+
+**5. ARIMA Modeling**
+```python
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.stattools import adfuller
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+
+def check_stationarity(ts):
+    # Augmented Dickey-Fuller test
+    result = adfuller(ts.dropna())
+    print('ADF Statistic:', result[0])
+    print('p-value:', result[1])
+    print('Critical Values:')
+    for key, value in result[4].items():
+        print(f'\t{key}: {value}')
+    
+    if result[1] <= 0.05:
+        print("Series is stationary")
+    else:
+        print("Series is not stationary")
+
+def fit_arima_model(ts, order=(1, 1, 1)):
+    model = ARIMA(ts, order=order)
+    fitted_model = model.fit()
+    
+    print(fitted_model.summary())
+    
+    # Plot diagnostics
+    fitted_model.plot_diagnostics(figsize=(12, 8))
+    plt.show()
+    
+    return fitted_model
+
+# Check stationarity and fit ARIMA
+check_stationarity(ts_data['sales'])
+arima_model = fit_arima_model(ts_data['sales'])
+```
+
+**6. Forecasting and Validation**
+```python
+def forecast_and_validate(model, train_data, test_data, steps):
+    # Make forecast
+    forecast = model.forecast(steps=steps)
+    conf_int = model.get_forecast(steps=steps).conf_int()
+    
+    # Plot results
+    plt.figure(figsize=(12, 6))
+    plt.plot(train_data.index[-50:], train_data[-50:], label='Train')
+    plt.plot(test_data.index, test_data, label='Actual')
+    plt.plot(test_data.index, forecast, label='Forecast', color='red')
+    plt.fill_between(test_data.index, 
+                     conf_int.iloc[:, 0], 
+                     conf_int.iloc[:, 1], 
+                     color='red', alpha=0.3)
+    plt.legend()
+    plt.title('Time Series Forecast')
+    plt.show()
+    
+    # Calculate metrics
+    mse = mean_squared_error(test_data, forecast)
+    rmse = np.sqrt(mse)
+    mae = np.mean(np.abs(test_data - forecast))
+    
+    print(f"Forecast Metrics:")
+    print(f"MSE: {mse:.4f}")
+    print(f"RMSE: {rmse:.4f}")
+    print(f"MAE: {mae:.4f}")
+    
+    return forecast, conf_int
+
+# Split data and validate
+train_size = int(len(ts_data) * 0.8)
+train_data = ts_data['sales'][:train_size]
+test_data = ts_data['sales'][train_size:]
+
+# Refit model on training data
+train_model = fit_arima_model(train_data)
+forecast, conf_int = forecast_and_validate(train_model, train_data, test_data, len(test_data))
+```
+
+This comprehensive approach handles the unique challenges of time series data and provides robust forecasting capabilities.</s>

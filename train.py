@@ -27,26 +27,22 @@ def load_data_from_files(glob_pattern: str) -> List[Dict[str, str]]:
 
 def main():
     # config
-    model_name = "mistralai/Mistral-7B-v0.3"  # or your base model
-    output_dir = "./fine_tuned_model"
+    model_name = "meta-llama/Meta-Llama-3.1-8B-Instruct"  # or your base model
+    output_dir = "./claire-3b-datasci"
+    token = "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"  # your Hugging Face token
     
     # load local files
     training_data = load_data_from_files("./data/**/*.txt")  # adjust glob pattern
     dataset = Dataset.from_list(training_data)
 
-    # quantization config
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.float16,
-    )
-
-    # load model and tokenizer
+    # load model and tokenizer (CPU-compatible configuration)
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
-        quantization_config=bnb_config,
-        device_map="auto",
-        trust_remote_code=True
+        torch_dtype=torch.float32,  # Use float32 for CPU
+        device_map=None,  # Don't use device_map on CPU
+        trust_remote_code=True,
+        use_auth_token=token,
+        low_cpu_mem_usage=True,  # Helps with memory usage on CPU
     )
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer.pad_token = tokenizer.eos_token
@@ -65,14 +61,14 @@ def main():
     model = get_peft_model(model, lora_config)
     model.print_trainable_parameters()
 
-    # training args
+    # training args (CPU-compatible configuration)
     training_args = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=3,
-        per_device_train_batch_size=4,
-        gradient_accumulation_steps=4,
+        per_device_train_batch_size=1,  # Smaller batch size for CPU
+        gradient_accumulation_steps=8,  # Increased for smaller batch size
         learning_rate=2e-4,
-        fp16=True,
+        fp16=False,  # Disable fp16 for CPU training
         logging_steps=10,
         save_strategy="epoch",
     )
